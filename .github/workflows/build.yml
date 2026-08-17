@@ -18,8 +18,11 @@ jobs:
         with:
           node-version: 20
 
-      - name: Initialize Electron App
+      - name: Download App Bundle and Configure
         run: |
+          mkdir -p app-dist
+          curl -sL "https://ais-dev-imficyxjd7as3oyhv26rw2-489790092467.asia-southeast1.run.app" -o app-dist/index.html || true
+
           cat << 'EOF' > package.json
           {
             "name": "iti-attendance-master",
@@ -30,6 +33,7 @@ jobs:
 
           cat << 'EOF' > main.js
           const { app, BrowserWindow, Menu } = require('electron');
+          const path = require('path');
 
           function createWindow() {
             const mainWindow = new BrowserWindow({
@@ -41,12 +45,19 @@ jobs:
               autoHideMenuBar: true,
               webPreferences: {
                 nodeIntegration: false,
-                contextIsolation: true
+                contextIsolation: true,
+                webSecurity: false
               }
             });
 
             Menu.setApplicationMenu(null);
-            mainWindow.loadURL('https://ais-pre-imficyxjd7as3oyhv26rw2-489790092467.asia-southeast1.run.app');
+            
+            // Primary: Loads development cloud instance
+            mainWindow.loadURL('https://ais-dev-imficyxjd7as3oyhv26rw2-489790092467.asia-southeast1.run.app');
+
+            mainWindow.webContents.on('did-fail-load', () => {
+              mainWindow.loadURL('https://ais-pre-imficyxjd7as3oyhv26rw2-489790092467.asia-southeast1.run.app');
+            });
           }
 
           app.whenReady().then(createWindow);
