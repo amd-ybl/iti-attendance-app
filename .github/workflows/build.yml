@@ -6,11 +6,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-windows:
-    runs-on: windows-latest
+  build:
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -18,15 +18,38 @@ jobs:
         with:
           node-version: 20
 
-      - name: Initialize Electron App
+      - name: Create Package and Electron App
         run: |
-          npm init -y
-          npm install electron electron-builder
+          cat << 'EOF' > package.json
+          {
+            "name": "iti-attendance-master",
+            "version": "1.0.0",
+            "main": "main.js",
+            "description": "ITI Attendance Master Desktop App",
+            "author": "ITI Bilha",
+            "scripts": {
+              "dist": "electron-builder --win nsis --x64"
+            },
+            "build": {
+              "appId": "com.itibilha.attendancemaster",
+              "productName": "ITI Attendance Master",
+              "directories": {
+                "output": "release"
+              },
+              "win": {
+                "target": "nsis"
+              },
+              "nsis": {
+                "oneClick": false,
+                "allowToChangeInstallationDirectory": true,
+                "createDesktopShortcut": true,
+                "createStartMenuShortcut": true
+              }
+            }
+          }
+          EOF
 
-      - name: Create Electron Main File
-        shell: pwsh
-        run: |
-          @'
+          cat << 'EOF' > main.js
           const { app, BrowserWindow, Menu } = require('electron');
 
           function createWindow() {
@@ -52,13 +75,16 @@ jobs:
           app.on('window-all-closed', () => {
             if (process.platform !== 'darwin') app.quit();
           });
-          '@ | Out-File -FilePath "main.js" -Encoding utf8
+          EOF
 
-      - name: Build Windows .EXE Installer
-        run: npx electron-builder --win --x64 -c.extraMetadata.main="main.js" -c.productName="ITI-Attendance-Master" -c.appId="com.itibilha.attendancemaster" -c.win.target="nsis" -c.directories.output="release"
+      - name: Install Electron & Builder
+        run: npm install electron@latest electron-builder@latest --save-dev
 
-      - name: Upload Windows EXE
+      - name: Build Windows .exe Installer
+        run: npm run dist
+
+      - name: Upload Windows EXE Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ITI-Attendance-Master-Windows-EXE
+          name: ITI-Attendance-Master-Windows-Installer
           path: release/*.exe
