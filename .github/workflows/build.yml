@@ -18,34 +18,13 @@ jobs:
         with:
           node-version: 20
 
-      - name: Create Package and Electron App
+      - name: Initialize Electron App
         run: |
           cat << 'EOF' > package.json
           {
             "name": "iti-attendance-master",
             "version": "1.0.0",
-            "main": "main.js",
-            "description": "ITI Attendance Master Desktop App",
-            "author": "ITI Bilha",
-            "scripts": {
-              "dist": "electron-builder --win nsis --x64"
-            },
-            "build": {
-              "appId": "com.itibilha.attendancemaster",
-              "productName": "ITI Attendance Master",
-              "directories": {
-                "output": "release"
-              },
-              "win": {
-                "target": "nsis"
-              },
-              "nsis": {
-                "oneClick": false,
-                "allowToChangeInstallationDirectory": true,
-                "createDesktopShortcut": true,
-                "createStartMenuShortcut": true
-              }
-            }
+            "main": "main.js"
           }
           EOF
 
@@ -77,14 +56,14 @@ jobs:
           });
           EOF
 
-      - name: Install Electron & Builder
-        run: npm install electron@latest electron-builder@latest --save-dev
+          npm install electron@30.0.0 --save-dev
 
-      - name: Build Windows .exe Installer
-        run: npm run dist
+      - name: Package Windows .EXE
+        run: |
+          npx --yes @electron/packager . "ITI Attendance Master" --platform=win32 --arch=x64 --out=dist-win --overwrite
 
-      - name: Upload Windows EXE Artifact
+      - name: Upload Windows App
         uses: actions/upload-artifact@v4
         with:
-          name: ITI-Attendance-Master-Windows-Installer
-          path: release/*.exe
+          name: ITI-Attendance-Master-Windows
+          path: dist-win/
